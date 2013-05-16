@@ -33,19 +33,18 @@ void send_translate() {
         tmp = (colors[i][j] * 4095) / 255;
         // wysylka prawych 8 bitow
         if (mode) {
-            buffer[buffer_position] = byte(tmp >> 4);
+            buffer[buffer_position++] = byte(tmp >> 4);
             
             to_send = byte((tmp << 12) >> 8);
         } else {
             to_send |= (tmp >> 8);
 
-            buffer[buffer_position] = byte(to_send);
+            buffer[buffer_position++] = byte(to_send);
 
-            buffer[buffer_position] = byte((tmp << 8) >> 8);
+            buffer[buffer_position++] = byte((tmp << 8) >> 8);
         }
 
         mode = !mode;
-        buffer_position++;
       }
     }
     
