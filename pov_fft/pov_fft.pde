@@ -54,7 +54,7 @@ void send_translate() {
 
 void setup() {
   size(640, 480, P3D);
-  //rectMode(CORNERS);
+  rectMode(CORNERS);
 
   height3 = height/3;
   height23 = 2*height/3;
@@ -93,7 +93,9 @@ void draw() {
   {
     v = fftLog.getAvg(i);
     // draw a rectangle for each average, multiply the value by spectrumScale so we can see it better
-    rect(i*w, height-50, i*w + w, height - v*spectrumScale );
+    
+  fill(255);
+    rect(i*w, height-50, i*w + w, height - v*spectrumScale - 50);
     
     colors[i][1] = byte(min(v, 255));
     
@@ -101,6 +103,9 @@ void draw() {
       v -= 255;
       colors[i][0] = byte(min(v, 255));
     }
+    
+    fill(map(colors[i][0], 0,255, 0, 205) + 50, map(colors[i][1],0,255,0,205) + 50, map(colors[i][2],0,255,0,205) + 50);
+    rect(i*w, height, i*w+w, height-50);
       
 
   }
