@@ -54,13 +54,13 @@ void send_translate() {
 
 void setup() {
   size(640, 480, P3D);
-  rectMode(CORNERS);
+  //rectMode(CORNERS);
 
   height3 = height/3;
   height23 = 2*height/3;
   
   minim = new Minim(this);
-  music = minim.loadFile("/Users/alfanick/Music/iTunes/iTunes Media/Music/Ronald Jenkees/Disorganized Fun/09 Outer Space.mp3", 2048);
+  music = minim.loadFile("music.mp3", 2048);
   music.loop();
   
   fftLog = new FFT(music.bufferSize(), music.sampleRate());
@@ -86,14 +86,23 @@ void draw() {
   // draw the linear averages
   // draw the logarithmic averages
   fftLog.forward(music.mix);
-  int w = int(width/fftLog.avgSize());
+  int w = int(width/fftLog.avgSize()*2);
+  float v = 0;
   println("abc:");
-  for(int i = 0; i < fftLog.avgSize(); i++)
+  for(int i = 0; i < fftLog.avgSize()/2; i++)
   {
+    v = fftLog.getAvg(i);
     // draw a rectangle for each average, multiply the value by spectrumScale so we can see it better
-    rect(i*w, height, i*w + w, height - fftLog.getAvg(i)*spectrumScale);
+    rect(i*w, height-50, i*w + w, height - v*spectrumScale );
     
-    colors[i][2] = colors[i][1] = colors[i][0] = byte(min(fftLog.getAvg(i), 255));
+    colors[i][1] = byte(min(v, 255));
+    
+    if (v > 255) {
+      v -= 255;
+      colors[i][0] = byte(min(v, 255));
+    }
+      
+
   }
   
   send_translate();
