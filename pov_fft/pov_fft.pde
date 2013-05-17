@@ -13,21 +13,135 @@ float height3, height23;
 float spectrumScale = 2;
 
 byte[][] colors = new byte[40][3];
-byte[] buffer = new byte[180];
+byte[] buffer = new byte[185];
 
-void send_translate() {
+class FFTThread extends Thread {
+  fftLog = new FFT(music.bufferSize(), music.sampleRate());
+  fftLog.logAverages(22, 8);
+  
+  PApplet context;  
+  FFT fftLogarithm;
+  AudioPlayer musicHandler;
+  
+  boolean isRunning;
+  String musicFile;
+
+
+  FFTThread(PApplet context, String musicFile, ) {
+    this.isRunning = false;
+    this.context = context;
+    this.musicFile = musicFile;
+  }
+  
+  void start() {
+    minim = new Minim(context);
+    music = minim.loadFile(musicFile, 2048);
+    musicHandler.loop();
+    musicHandler.mute();
+    
+    fftLogarithm =new FFT(musicHandler.bufferSize(), musicHandler.sampleRate());
+    fftLogarithm.logAverages(22, 8);
+
+
+    isRunning = true;
+    super.start();    
+  }
+  
+  void run() {
+    while(isRunning) {
+       
+    }
+  }
+  
+  void quit() {
+    isRunning = false;
+    interrupt();
+  }
+}
+
+class SenderThread extends Thread {
+  
+  PApplet context; 
+  Serial BTSerial;
+  byte[] buffer;
+  boolean withTransmissionInitSeq;
+  boolean isRunning;
+  
+  SenderThread(PApplet context, boolean withTransmissionInitSeq) {
+    
+    this.withTransmissionInitSeq = withTransmissionInitSeq;
+    this.isRunning = false;
+    this.context = context;
+    
+    if ( this.withTransmissionInitSeq)
+      this.buffer = new byte[185];
+    else 
+      this.buffer = new byte[180];
+      
+  }
+  
+  void start() {
+    try {
+      BTSerial = new Serial(context, "/dev/tty.POVINF2011-SPP", 115200);
+    } 
+    catch (Exception e) {
+      print("Could not open serial port");
+      interrupt();
+    }
+    
+    isRunning = true;
+    super.start();
+  }
+  
+  void run() {
+    while(isRunning) {
+    
+    }
+  }
+  
+  void sendWithTransmissionInit(){
     int buffer_position = 0;
     boolean mode = true;
     
     byte to_send = 0;
     int tmp;
-  /*  
-    pov.write(255);
-    pov.write(255);
-    pov.write(255);
-    pov.write(255);
-    pov.write(255);
-    */
+    
+    for (int i=0; i<5; i++){
+      buffer[i] = byte(255);
+    }
+    
+    for (int i = 0; i < 40; i++) {
+      for (int j = 0; j < 3; j++) {
+        tmp = (colors[i][j] * 4095) / 255;
+        // wysylka prawych 8 bitow
+        if (mode) {
+            buffer[5+buffer_position++] = byte(tmp >> 4);
+            
+            to_send = byte((tmp << 12) >> 8);
+        } else {
+            to_send |= (tmp >> 8);
+
+            buffer[5+buffer_position++] = byte(to_send);
+
+            buffer[5+buffer_position++] = byte((tmp << 8) >> 8);
+        }
+
+        mode = !mode;
+      }
+    }
+   
+    BTSerial.write(buffer);
+  }
+  
+   
+  void sendWithoutInit(){
+    
+    int buffer_position = 0;
+    boolean mode = true;
+    
+    byte to_send = 0;
+    int tmp;
+    
     for (int i = 0; i < 40; i++) {
       for (int j = 0; j < 3; j++) {
         tmp = (colors[i][j] * 4095) / 255;
@@ -47,13 +161,57 @@ void send_translate() {
         mode = !mode;
       }
     }
+   
+    BTSerial.write(buffer);
+  }
+  
+  void quit() {
+      isRunning = false;
+      BTSerial.stop();
+      interrupt();
+  }
+}
+
+
+
+
+void send_translate() {
+    int buffer_position = 0;
+    boolean mode = true;
     
+    byte to_send = 0;
+    int tmp;
+    
+    for (int i=0; i<5; i++){
+      buffer[i] = byte(255);
+    }
+    
+    for (int i = 0; i < 40; i++) {
+      for (int j = 0; j < 3; j++) {
+        tmp = (colors[i][j] * 4095) / 255;
+        // wysylka prawych 8 bitow
+        if (mode) {
+            buffer[5+buffer_position++] = byte(tmp >> 4);
+            
+            to_send = byte((tmp << 12) >> 8);
+        } else {
+            to_send |= (tmp >> 8);
+
+            buffer[5+buffer_position++] = byte(to_send);
+
+            buffer[5+buffer_position++] = byte((tmp << 8) >> 8);
+        }
+
+        mode = !mode;
+      }
+    }
+   
     pov.write(buffer);
 }  
 
 
 void setup() {
-  size(640, 480, P3D);
+  size(1000, 800, P3D);
   rectMode(CORNERS);
 
   height3 = height/3;
@@ -70,7 +228,6 @@ void setup() {
     pov = new Serial(this, "/dev/tty.POVINF2011-SPP", 115200);
   } 
   catch (Exception e) {
-    
   }
 }
 
@@ -88,13 +245,12 @@ void draw() {
   fftLog.forward(music.mix);
   int w = int(width/fftLog.avgSize()*2);
   float v = 0;
-  println("abc:");
   for(int i = 0; i < fftLog.avgSize()/2; i++)
   {
     v = fftLog.getAvg(i);
     // draw a rectangle for each average, multiply the value by spectrumScale so we can see it better
     
-  fill(255);
+    fill(255);
     rect(i*w, height-50, i*w + w, height - v*spectrumScale - 50);
     
     colors[i][1] = byte(min(v, 255));
@@ -104,9 +260,11 @@ void draw() {
       colors[i][0] = byte(min(v, 255));
     }
     
-    fill(map(colors[i][0], 0,255, 0, 205) + 50, map(colors[i][1],0,255,0,205) + 50, map(colors[i][2],0,255,0,205) + 50);
+    fill(colors[i][0], colors[i][1], 0);
     rect(i*w, height, i*w+w, height-50);
-      
+
+    fill(255);
+    text(int(v), i*w,height-25);
 
   }
   
