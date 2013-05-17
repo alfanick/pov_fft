@@ -48,11 +48,7 @@ void send_translate() {
       }
     }
     
-    for (int i =0; i < 180; i++) {
-      print(buffer[i]); print(' ');
-    }
-      pov.write(buffer);
-    println("abc");
+    pov.write(buffer);
 }  
 
 
