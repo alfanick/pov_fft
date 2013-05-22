@@ -13,21 +13,22 @@ float height3, height23;
 float spectrumScale = 2;
 
 byte[][] colors = new byte[40][3];
-byte[] buffer = new byte[180];
+byte[] buffer = new byte[185];
 
 void send_translate() {
-    int buffer_position = 0;
+    int buffer_position = 5;
     boolean mode = true;
     
     byte to_send = 0;
     int tmp;
-  /*  
-    pov.write(255);
-    pov.write(255);
-    pov.write(255);
-    pov.write(255);
-    pov.write(255);
-    */
+    
+    
+    buffer[0] = byte(255);
+    buffer[1] = byte(255);
+    buffer[2] = byte(255);
+    buffer[3] = byte(255);
+    buffer[4] = byte(255);
+    
     for (int i = 0; i < 40; i++) {
       for (int j = 0; j < 3; j++) {
         tmp = (colors[i][j] * 4095) / 255;
@@ -49,6 +50,11 @@ void send_translate() {
     }
     
     pov.write(buffer);
+    for (int i = 0; i < 40; i++) {
+      for (int j = 0; j < 3; j++) {
+        colors[i][j] = 0;
+      }
+    }
 }  
 
 
@@ -93,7 +99,7 @@ void draw() {
   {
     v = fftLog.getAvg(i);
     // draw a rectangle for each average, multiply the value by spectrumScale so we can see it better
-    rect(i*w, height-50, i*w + w, height - v*spectrumScale );
+    rect(i*w, v+50, w, height -50 );
     
     colors[i][1] = byte(min(v, 255));
     
