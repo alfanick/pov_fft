@@ -13,7 +13,7 @@ float height3, height23;
 float spectrumScale = 2;
 
 byte[][] colors = new byte[40][3];
-byte[] buffer = new byte[185];
+byte[] buffer = new byte[45];
 
 void send_translate() {
     int buffer_position = 5;
@@ -57,6 +57,34 @@ void send_translate() {
     }
 }  
 
+void send_translate_254() {
+    int buffer_position = 5;
+    boolean mode = true;
+    
+    byte to_send = 0;
+    int tmp;
+    
+    
+    buffer[0] = byte(254);
+    buffer[1] = byte(254);
+    buffer[2] = byte(254);
+    buffer[3] = byte(254);
+    buffer[4] = byte(254);
+    
+    for (int i = 0; i < 40; i++) {
+      buffer[i+5] = byte(abs(map(colors[i][0], 0, 255, 0, 40)));
+      print(buffer[i+5]);print(' ');
+    }
+    print("\n");
+    
+    pov.write(buffer);
+    for (int i = 0; i < 40; i++) {
+      for (int j = 0; j < 3; j++) {
+        colors[i][j] = 0;
+      }
+    }
+}  
+
 
 void setup() {
   size(640, 480, P3D);
@@ -76,7 +104,7 @@ void setup() {
     pov = new Serial(this, "/dev/tty.POVINF2011-SPP", 115200);
   } 
   catch (Exception e) {
-    
+  
   }
 }
 
@@ -99,20 +127,25 @@ void draw() {
   {
     v = fftLog.getAvg(i);
     // draw a rectangle for each average, multiply the value by spectrumScale so we can see it better
-    rect(i*w, v+50, w, height -50 );
+    rect(i*w, v+50, w, height - 50);
     
-    colors[i][1] = byte(min(v, 255));
+    colors[i][0] = byte(min(v, 255));
+    /*
+    colors[i][1] = byte(min(v, 64) * 255 / 140);
     
-    if (v > 255) {
-      v -= 255;
-      colors[i][0] = byte(min(v, 255));
+    if (v > 64) {
+      v -= 64;
+      colors[i][0] = byte(min(v, 192) * 255 / 192);
+      if (v > 0) {
+        v -= 140;
+        colors[i][2] = byte(min(v, 255));
+      }
     }
-      
-
+    */
   }
   
-  send_translate();
-}
+  send_translate_254();
+} //
 
 void stop()
 {
